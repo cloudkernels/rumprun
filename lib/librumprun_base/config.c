@@ -563,107 +563,110 @@ handle_blk(jsmntok_t *t, int left, char *data)
 	const char *source, *origpath, *fstype;
 	char *mp, *path;
 	jsmntok_t *key, *value;
-	int i, objsize;
+	int i, arrsize, objsize, total_objsize=0;
 
-	T_CHECKTYPE(t, data, JSMN_OBJECT, __func__);
-
-	/* we expect straight key-value pairs */
-	objsize = t->size;
-	if (left < 2*objsize + 1) {
-		return -1;
-	}
+	T_CHECKTYPE(t, data, JSMN_ARRAY, __func__);
+	arrsize = t->size;
 	t++;
 
-	fstype = source = origpath = mp = path = NULL;
+	for(int count = arrsize; count > 0; count--) {
+		fstype = source = origpath = mp = path = NULL;
 
-	for (i = 0; i < objsize; i++, t+=2) {
-		char *valuestr;
-		key = t;
-		value = t+1;
+		T_CHECKTYPE(t, data, JSMN_OBJECT, __func__);
+		objsize = t->size;
+		t++;
 
-		T_CHECKTYPE(key, data, JSMN_STRING, __func__);
-		T_CHECKSIZE(key, data, 1, __func__);
+		for (i = 0; i < objsize; i++, t+=2) {
+			char *valuestr;
+			key = t;
+			value = t+1;
 
-		T_CHECKTYPE(value, data, JSMN_STRING, __func__);
-		T_CHECKSIZE(value, data, 0, __func__);
+			T_CHECKTYPE(key, data, JSMN_STRING, __func__);
+			T_CHECKSIZE(key, data, 1, __func__);
 
-		valuestr = token2cstr(value, data);
-		if (T_STREQ(key, data, "source")) {
-			source = valuestr;
-		} else if (T_STREQ(key, data, "path")) {
-			origpath = path = valuestr;
-		} else if (T_STREQ(key, data, "fstype")) {
-			fstype = valuestr;
-		} else if (T_STREQ(key, data, "mountpoint")) {
-			mp = valuestr;
+			T_CHECKTYPE(value, data, JSMN_STRING, __func__);
+			T_CHECKSIZE(value, data, 0, __func__);
+
+			valuestr = token2cstr(value, data);
+			if (T_STREQ(key, data, "source")) {
+				source = valuestr;
+			} else if (T_STREQ(key, data, "path")) {
+				origpath = path = valuestr;
+			} else if (T_STREQ(key, data, "fstype")) {
+				fstype = valuestr;
+			} else if (T_STREQ(key, data, "mountpoint")) {
+				mp = valuestr;
+			} else {
+				errx(1, "unexpected key \"%.*s\" in \"%s\"",
+				    T_PRINTFSTAR(key, data), __func__);
+			}
+		}
+
+		if (!source || !path) {
+			errx(1, "blk cfg missing vital data");
+		}
+
+		if (strcmp(source, "dev") == 0) {
+			/* nothing to do here */
+		} else if (strcmp(source, "vnd") == 0) {
+			path = configvnd(path);
+		} else if (strcmp(source, "etfs") == 0) {
+			path = configetfs(path, 1);
 		} else {
-			errx(1, "unexpected key \"%.*s\" in \"%s\"",
-			    T_PRINTFSTAR(key, data), __func__);
-		}
-	}
-
-	if (!source || !path) {
-		errx(1, "blk cfg missing vital data");
-	}
-
-	if (strcmp(source, "dev") == 0) {
-		/* nothing to do here */
-	} else if (strcmp(source, "vnd") == 0) {
-		path = configvnd(path);
-	} else if (strcmp(source, "etfs") == 0) {
-		path = configetfs(path, 1);
-	} else {
-		errx(1, "unsupported blk source \"%s\"", source);
-	}
-
-	/* we only need to do something only if a mountpoint is specified */
-	if (mp) {
-		char *chunk;
-		unsigned mi;
-
-		if (!fstype) {
-			errx(1, "no fstype for mountpoint \"%s\"\n", mp);
+			errx(1, "unsupported blk source \"%s\"", source);
 		}
 
-		for (chunk = mp;;) {
-			bool end;
+		/* we only need to do something only if a mountpoint is specified */
+		if (mp) {
+			char *chunk;
+			unsigned mi;
 
-			/* find & terminate the next chunk */
-			chunk += strspn(chunk, "/");
-			chunk += strcspn(chunk, "/");
-			end = (*chunk == '\0');
-			*chunk = '\0';
-
-			if (mkdir(mp, 0755) == -1) {
-				if (errno != EEXIST)
-					err(1, "failed to create mp dir \"%s\"",
-					    chunk);
+			if (!fstype) {
+				errx(1, "no fstype for mountpoint \"%s\"\n", mp);
 			}
 
-			/* restore path */
-			if (!end)
-				*chunk = '/';
-			else
-				break;
+			for (chunk = mp;;) {
+				bool end;
+
+				/* find & terminate the next chunk */
+				chunk += strspn(chunk, "/");
+				chunk += strcspn(chunk, "/");
+				end = (*chunk == '\0');
+				*chunk = '\0';
+
+				if (mkdir(mp, 0755) == -1) {
+					if (errno != EEXIST)
+						err(1, "failed to create mp dir \"%s\"",
+						    chunk);
+				}
+
+				/* restore path */
+				if (!end)
+					*chunk = '/';
+				else
+					break;
+			}
+
+			for (mi = 0; mi < __arraycount(mounters); mi++) {
+				if (strcmp(fstype, mounters[mi].mt_fstype) == 0) {
+					if (!mounters[mi].mt_mount(path, mp))
+						errx(1, "failed to mount fs type "
+						    "\"%s\" from \"%s\" to \"%s\"",
+						    fstype, path, mp);
+					break;
+				}
+			}
+			if (mi == __arraycount(mounters))
+				errx(1, "unknown fstype \"%s\"", fstype);
 		}
 
-		for (mi = 0; mi < __arraycount(mounters); mi++) {
-			if (strcmp(fstype, mounters[mi].mt_fstype) == 0) {
-				if (!mounters[mi].mt_mount(path, mp))
-					errx(1, "failed to mount fs type "
-					    "\"%s\" from \"%s\" to \"%s\"",
-					    fstype, path, mp);
-				break;
-			}
-		}
-		if (mi == __arraycount(mounters))
-			errx(1, "unknown fstype \"%s\"", fstype);
+		if (path != origpath)
+			free(path);
+
+		total_objsize += 2*objsize + 1;
 	}
 
-	if (path != origpath)
-		free(path);
-
-	return 2*objsize + 1;
+	return total_objsize + 1;
 }
 
 struct {
