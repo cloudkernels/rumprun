@@ -493,7 +493,7 @@ installsolo5libs ()
 {
 
 	SPTLIB=${RRDEST}/rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}/libsolo5_spt.a
-	HVTLIB=${RRDEST}/rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}/libsolo5_hvt.a
+	##HVTLIB=${RRDEST}/rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}/libsolo5_hvt.a
 
 	# The reason for this very strange objcopy is that both solo5.o and
 	# rumprun's libc.a define a stack guard.
@@ -501,9 +501,9 @@ installsolo5libs ()
 		--redefine-sym __stack_chk_guard=__stack_chk_guard_solo5 \
 		solo5/bindings/spt/solo5_spt.o ${SPTLIB}
 
-	objcopy --redefine-sym __stack_chk_fail=__stack_chk_fail_solo5 \
-		--redefine-sym __stack_chk_guard=__stack_chk_guard_solo5 \
-		solo5/bindings/hvt/solo5_hvt.o ${HVTLIB}
+	##objcopy --redefine-sym __stack_chk_fail=__stack_chk_fail_solo5 \
+	##	--redefine-sym __stack_chk_guard=__stack_chk_guard_solo5 \
+	##	solo5/bindings/hvt/solo5_hvt.o ${HVTLIB}
 }
 
 wraponetool ()
