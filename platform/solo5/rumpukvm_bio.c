@@ -66,7 +66,7 @@ devopen(int num)
 
 	if (bd->blk_open) {
 		bd->blk_open++;
-		return 1;
+		//return 1;
 	}
 	bmk_snprintf(buf, sizeof(buf), "device/vbd/%d", bd->blk_vbd);
 
