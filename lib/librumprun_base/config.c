@@ -37,6 +37,7 @@
 #include <ufs/ufs/ufsmount.h>
 #include <isofs/cd9660/cd9660_mount.h>
 #include <ufs/lfs/lfs.h>
+#include <miscfs/union/union.h>
 
 #include <dev/vndvar.h>
 
@@ -85,6 +86,10 @@
 		    "in \"%s\"", T_PRINTFSTAR(t,data), fun);		\
 	}								\
   } while (/*CONSTCOND*/0)
+
+#define MERGED_MP "/merged"
+#define MAX_MOUNTPOINTS 255
+char mountpoints[MAX_MOUNTPOINTS][MAXPATHLEN];
 
 static char *
 token2cstr(jsmntok_t *t, char *data)
@@ -526,16 +531,28 @@ mount_blk(const char *dev, const char *mp)
 	struct iso_args mntargs_iso = { .fspec = dev };
 	struct ulfs_args mntargs_ulfs = { .fspec = __UNCONST(dev) };
 
-	if (mount(MOUNT_LFS, mp, MNT_UNION, &mntargs_ulfs, sizeof(mntargs_ulfs)) == 0)
+	if (mount(MOUNT_LFS, mp, 0, &mntargs_ulfs, sizeof(mntargs_ulfs)) == 0)
 		return true;
 	if (mount(MOUNT_CD9660,
-	    mp, MNT_RDONLY|MNT_UNION, &mntargs_iso, sizeof(mntargs_iso)) == 0)
+	    mp, MNT_RDONLY, &mntargs_iso, sizeof(mntargs_iso)) == 0)
 		return true;
-	if (mount(MOUNT_FFS, mp, MNT_UNION, &mntargs_ufs, sizeof(mntargs_ufs)) == 0)
+	if (mount(MOUNT_FFS, mp, 0, &mntargs_ufs, sizeof(mntargs_ufs)) == 0)
 		return true;
-	if (mount(MOUNT_EXT2FS, mp, MNT_UNION, &mntargs_ufs, sizeof(mntargs_ufs)) == 0)
+	if (mount(MOUNT_EXT2FS, mp, 0, &mntargs_ufs, sizeof(mntargs_ufs)) == 0)
 		return true;
 
+	return false;
+}
+
+static bool
+mount_blk_union(const char *union_dir, const char *target, int union_flags, int mount_flags) {
+	struct union_args mntargs_union = { .mntflags = union_flags, .target = __UNCONST(target)};
+
+	printf("Union mounting %s on %s...\n", target, union_dir);
+	if (mount(MOUNT_UNION, union_dir, mount_flags, &mntargs_union, sizeof(mntargs_union)) == 0)
+		return true;
+
+	warn("failed to union mount");
 	return false;
 }
 
@@ -658,6 +675,8 @@ handle_blk(jsmntok_t *t, int left, char *data)
 			}
 			if (mi == __arraycount(mounters))
 				errx(1, "unknown fstype \"%s\"", fstype);
+
+			strlcpy(mountpoints[arrsize - count], mp, MAXPATHLEN);
 		}
 
 		if (path != origpath)
@@ -833,6 +852,15 @@ rumprun_config(char *cmdline)
 			errx(1, "no match for key \"%.*s\"",
 			    T_PRINTFSTAR(t, cmdline));
 	}
+
+	mkdir(MERGED_MP, 0777);
+	for (i = 0; i < MAX_MOUNTPOINTS; ++i) {
+		if (!*mountpoints[i])
+			break;
+
+		mount_blk_union(MERGED_MP, mountpoints[i], UNMNT_ABOVE, 0);
+	}
+	chroot(MERGED_MP);
 
 	/*
 	 * Before we start running things, perform some sanity checks
