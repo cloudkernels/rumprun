@@ -1,9 +1,9 @@
-[submodule "solo5"]
-	path = solo5
-	url = https://github.com/cloudkernels/solo5-orestis
 [submodule "buildrump.sh"]
 	path = buildrump.sh
 	url = https://github.com/cloudkernels/buildrump.sh
 [submodule "src-netbsd"]
 	path = src-netbsd
 	url = https://github.com/cloudkernels/src-netbsd
+[submodule "solo5"]
+	path = solo5
+	url = git@github.com:cloudkernels/solo5-orestis
