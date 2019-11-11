@@ -545,7 +545,7 @@ mount_blk(const char *dev, const char *mp)
 }
 
 static bool
-mount_blk_union(const char *union_dir, const char *target, int union_flags, int mount_flags) {
+mount_union(const char *union_dir, const char *target, int union_flags, int mount_flags) {
 	struct union_args mntargs_union = { .mntflags = union_flags, .target = __UNCONST(target)};
 
 	printf("Union mounting %s on %s...\n", target, union_dir);
@@ -853,13 +853,26 @@ rumprun_config(char *cmdline)
 			    T_PRINTFSTAR(t, cmdline));
 	}
 
-	mkdir(MERGED_MP, 0777);
+	if (mkdir(MERGED_MP, 0777) == -1)
+		if (errno != EEXIST)
+			err(1, "failed to create union mp %s", MERGED_MP);
+
 	for (i = 0; i < MAX_MOUNTPOINTS; ++i) {
 		if (!*mountpoints[i])
 			break;
 
-		mount_blk_union(MERGED_MP, mountpoints[i], UNMNT_ABOVE, 0);
+		mount_union(MERGED_MP, mountpoints[i], UNMNT_ABOVE, 0);
 	}
+
+	if (mkdir(MERGED_MP"/dev", 0777) == -1)
+		if (errno != EEXIST)
+			err(1, "failed to create /dev bind mp");
+	mount_union(MERGED_MP"/dev", "/dev", UNMNT_ABOVE, 0);
+
+	if (mkdir(MERGED_MP"/tmp", 0777) == -1)
+		if (errno != EEXIST)
+			err(1, "failed to create /tmp bind mp");
+
 	chroot(MERGED_MP);
 
 	/*
