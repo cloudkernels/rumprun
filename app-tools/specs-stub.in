@@ -6,7 +6,7 @@
 
 *lib:
 -L!DESTDIR!/rumprun-!MACHINE_GNU_ARCH!/lib		\
-    --start-group -lpthread -lc --end-group 		\
+    --start-group -lgcc -lpthread -lc --end-group 		\
     !DESTDIR!/rumprun-!MACHINE_GNU_ARCH!/lib/pseudolinkstubs.o
 
 *link:

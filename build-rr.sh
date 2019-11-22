@@ -619,7 +619,7 @@ doinstall ()
 		    -exec mv -f '{}' rumprun-${MACHINE_GNU_ARCH}/lib/ \;
 
 		# make sure special cases are visible everywhere
-		for x in c pthread ; do
+		for x in c pthread gcc ; do
 			rm -f rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}/lib${x}.a
 			ln -s ../lib${x}.a \
 			    rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}/lib${x}.a
