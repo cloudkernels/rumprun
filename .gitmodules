@@ -6,4 +6,4 @@
 	url = https://github.com/cloudkernels/buildrump.sh
 [submodule "src-netbsd"]
 	path = src-netbsd
-	url = https://github.com/cloudkernels/src-netbsd
+	url = https://github.com/cloudkernels/src-netbsd-flat.git
