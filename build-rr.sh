@@ -542,7 +542,7 @@ makeconfig ()
 
 	# wrap mandatory toolchain bits
 	for t in AR AS CC CPP LD NM OBJCOPY OBJDUMP RANLIB READELF \
-            SIZE STRINGS STRIP; do
+            SIZE STRINGS STRIP FC; do
 		wraponetool ${1} ${t} "${quote}"
 	done
 

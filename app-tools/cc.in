@@ -47,6 +47,11 @@ case ${PROGNAME} in
 	CFLAGS="!CXXFLAGS!"
 	EXTRALIBS="-lc++ -lunwind"
 	;;
+*-gfortran)
+	CC="!LIBEXEC_FC!"
+	CFLAGS="!FFLAGS!"
+	EXTRALIBS=
+	;;
 *)
 	echo "${PROGNAME}: internal error, unknown invocation"
 	exit 1

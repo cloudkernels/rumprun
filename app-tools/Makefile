@@ -12,6 +12,7 @@ TOOLOBJ:= ${RROBJ}/app-tools
 
 _CCVARIANT:=$(shell ${RUMPMAKE} -f bsd.own.mk -V '$${HAVE_LLVM:Dclang:Ugcc}')
 _CXXVARIANT:=$(shell ${RUMPMAKE} -f bsd.own.mk -V '$${HAVE_LLVM:Dclang++:Ug++}')
+_FCVARIANT:='gfortran'
 MACHINE_GNU_PLATFORM:=\
     $(shell ${RUMPMAKE} -f bsd.own.mk -V '$${MACHINE_GNU_PLATFORM}')
 
@@ -26,6 +27,8 @@ _BIN_G=	ar as cpp ld nm objcopy objdump ranlib readelf size strings strip
 BIN_G=	$(_BIN_G:%=$(TOOLTUPLE)-%)
 BIN_G+=	$(TOOLTUPLE)-$(_CCVARIANT)
 CCWRP=	${CC}
+BIN_G+=	$(TOOLTUPLE)-$(_FCVARIANT)
+CCWRP+=	${FC}
 ifeq (${CONFIG_CXX},yes)
 BIN_G+=	$(TOOLTUPLE)-$(_CXXVARIANT)
 CCWRP+=	${CXX}
@@ -57,12 +60,14 @@ MACHDIR:= rumprun-${MACHINE_GNU_ARCH}-${PLATFORM}
 
 LIBEXEC_CC:= $(subst ${BRSOURCEDIR},${BRLIBEXECDEST},${CC})
 LIBEXEC_CXX:= $(subst ${BRSOURCEDIR},${BRLIBEXECDEST},${CXX})
+LIBEXEC_FC:= $(subst ${BRSOURCEDIR},${BRLIBEXECDEST},${FC})
 LIBEXEC_OBJCOPY:= ${BRLIBEXECDEST}/${MACHINE_GNU_PLATFORM}-objcopy
 LIBEXEC_SIZE:= ${BRLIBEXECDEST}/${MACHINE_GNU_PLATFORM}-size
 LIBEXEC_READELF:= ${BRLIBEXECDEST}/${MACHINE_GNU_PLATFORM}-readelf
 
 TOOLS_CC := ${RRDEST}/bin/$(TOOLTUPLE)-${_CCVARIANT}
 TOOLS_CXX := ${RRDEST}/bin/$(TOOLTUPLE)-${_CXXVARIANT}
+TOOLS_FC := ${RRDEST}/bin/$(TOOLTUPLE)-${_FCVARIANT}
 
 ${TOOLOBJ}:
 	mkdir -p "$@"
@@ -72,17 +77,20 @@ ${TOOLOBJ}/${2}: ${1} Makefile ${TOOLOBJ}
 	sed <$$< > $$@							\
 		-e 's#!LIBEXEC_CC!#$(LIBEXEC_CC)#g;'			\
 		-e 's#!LIBEXEC_CXX!#$(LIBEXEC_CXX)#g;'			\
+		-e 's#!LIBEXEC_FC!#$(LIBEXEC_FC)#g;'			\
 		-e 's#!LIBEXEC_OBJCOPY!#$(LIBEXEC_OBJCOPY)#g;'		\
 		-e 's#!LIBEXEC_READELF!#$(LIBEXEC_READELF)#g;'		\
 		-e 's#!LIBEXEC_SIZE!#$(LIBEXEC_SIZE)#g;'		\
 		-e 's#!TOOLS_CC!#$(TOOLS_CC)#g;'			\
 		-e 's#!TOOLS_CXX!#$(TOOLS_CXX)#g;'			\
+		-e 's#!TOOLS_FC!#$(TOOLS_FC)#g;'			\
 		-e 's#!MACHINE_GNU_ARCH!#$(MACHINE_GNU_ARCH)#g;'	\
 		-e 's#!TOOLTUPLE!#$(TOOLTUPLE)#g;'			\
 		-e 's#!DESTDIR!#$(RRDEST)#g;'				\
 		-e 's#!PLATFORM!#$(PLATFORM)#g;'			\
 		-e 's#!CPPFLAGS!#$(BUILDRUMP_TOOL_CPPFLAGS)#g;'		\
 		-e 's#!CFLAGS!#$(BUILDRUMP_TOOL_CFLAGS)#g;'		\
+		-e 's#!FFLAGS!#$(BUILDRUMP_TOOL_FFLAGS)#g;'		\
 		-e 's#!EXTRACCFLAGS!#$(EXTRACCFLAGS)#g;'		\
 		-e 's#!CXXFLAGS!#$(BUILDRUMP_TOOL_CXXFLAGS)#g;'		\
 		-e 's#!LDFLAGS_BAKE!#$(LDFLAGS_BAKE)#g;'
@@ -92,6 +100,7 @@ $(foreach file,${_FILES},$(eval $(call templ,${file}.in,${TOOLTUPLE}-${file})))
 $(foreach spec,${SPECS},$(eval $(call templ,${spec}.in,${spec})))
 $(eval $(call templ,cc.in,$(TOOLTUPLE)-${_CCVARIANT}))
 $(eval $(call templ,cc.in,$(TOOLTUPLE)-${_CXXVARIANT}))
+$(eval $(call templ,cc.in,$(TOOLTUPLE)-${_FCVARIANT}))
 $(eval $(call templ,specs-bake.in,specs-bake-$(TOOLTUPLE)-$(PLATFORM)))
 $(eval $(call templ,rumprun-bake.in,rumprun-bake))
 $(eval $(call templ,cookfs.in,$(TOOLTUPLE)-cookfs))
