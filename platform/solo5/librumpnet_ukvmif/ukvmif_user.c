@@ -57,6 +57,8 @@
 #include "virtif_user.h"
 #include <solo5.h>
 
+#define SOLO5_NET_NAME "tap"
+
 #if VIFHYPER_REVISION != 20140313
 #error VIFHYPER_REVISION mismatch
 #endif
@@ -69,11 +71,12 @@ struct virtif_user {
 	int viu_dying;
 };
 
+solo5_handle_t net_handle = 0;
 static struct solo5_net_info ni;
+
 int
 VIFHYPER_MAC(uint8_t **enaddr)
 {
-        solo5_net_info(&ni);
 	*enaddr = ni.mac_address;
 	return 0;
 }
@@ -125,12 +128,17 @@ int
 VIFHYPER_CREATE(const char *devstr, struct virtif_sc *vif_sc, uint8_t *enaddr,
 	struct virtif_user **viup)
 {
+	solo5_result_t ret;
 	struct virtif_user *viu = NULL;
+
+	ret = solo5_net_acquire(SOLO5_NET_NAME, &net_handle, &ni);
+	if (ret != SOLO5_R_OK)
+		solo5_exit(SOLO5_EXIT_FAILURE);
 
 	viu = bmk_memalloc(sizeof(*viu), 0, BMK_MEMWHO_RUMPKERN);
 	if (viu == NULL) {
 		solo5_console_write("create  fail\n",13);
-		solo5_exit(1);
+		solo5_exit(SOLO5_EXIT_FAILURE);
 	}
 
 	/* initialize the flag -- some compilers add garbage there */
@@ -143,7 +151,7 @@ VIFHYPER_CREATE(const char *devstr, struct virtif_sc *vif_sc, uint8_t *enaddr,
 	    NULL, 1, rcvthread, viu, NULL, 0);
 	if (! viu->viu_rcvthr) {
 		solo5_console_write("thread  fail\n",13);
-		solo5_exit(1);
+		solo5_exit(SOLO5_EXIT_FAILURE);
 	}
 
 	*viup = viu;
@@ -168,7 +176,7 @@ do_receive(void)
 	unsigned long len = PKT_BUFFER_LEN;
 
 	// XXX shouldn't abort if error
-	if (solo5_net_read(data, PKT_BUFFER_LEN, &len) != 0) {
+	if (solo5_net_read(net_handle, data, PKT_BUFFER_LEN, &len) != 0) {
 		return 1;
 	}
 
@@ -198,7 +206,7 @@ VIFHYPER_SEND(struct virtif_user *viu,
 	 * can't allocate temp memory space.
 	 */
 	if (iovlen == 1) {
-		solo5_net_write(iov->iov_base, iov->iov_len);
+		solo5_net_write(net_handle, iov->iov_base, iov->iov_len);
 		rumpkern_sched(nlocks, NULL);
 		return;
 	} else {
@@ -220,7 +228,7 @@ VIFHYPER_SEND(struct virtif_user *viu,
 	}
 
 	// XXX: check for error
-	solo5_net_write(d, tlen);
+	solo5_net_write(net_handle, d, tlen);
 
 	rumpkern_sched(nlocks, NULL);
 	return;
