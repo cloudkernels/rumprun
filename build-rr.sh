@@ -389,6 +389,12 @@ buildrump ()
 	#
 	[ `${CC} -dumpversion | cut -f1 -d.` -ge 7 ] \
 		&& extracflags="$extracflags -F CPPFLAGS=-Wimplicit-fallthrough=0"
+	[ `${CC} -dumpversion | cut -f1 -d.` -ge 7 ] \
+		&& extracflags="$extracflags -F CPPFLAGS=-Wno-maybe-uninitialized"
+	##[ `${CC} -dumpversion | cut -f1 -d.` -ge 7 ] \
+	##	&& extracflags="$extracflags -F CPPFLAGS=-Wimplicit-fallthrough=0"
+	##[ `${CC} -dumpversion | cut -f1 -d.` -ge 7 ] \
+	##	&& extracflags="$extracflags -F CPPFLAGS=-Wimplicit-fallthrough=0"
 
 
 	extracflags="${extracflags} ${TLSCFLAGS} ${FREQ_SETUP}"
