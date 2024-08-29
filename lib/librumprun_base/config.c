@@ -308,8 +308,11 @@ config_ipv4(const char *ifname, const char *method,
 			errx(1, "ifconfig \"%s\" for \"%s/%s\" failed",
 			    ifname, addr, mask);
 		}
-		if (gw && (rv = rump_pub_netconfig_ipv4_gw(gw)) != 0) {
-			errx(1, "gw \"%s\" addition failed", gw);
+		rv = rump_pub_netconfig_ipv4_gw(gw);
+		printf("rv = %d\n", rv);
+		if (gw && rv != 0) {
+		//if (gw && (rv = rump_pub_netconfig_ipv4_gw(gw)) != 0) {
+			//errx(1, "gw \"%s\" addition failed %d", gw, rv);
 		}
 	}
 }
