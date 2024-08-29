@@ -141,6 +141,10 @@ VIFHYPER_CREATE(const char *devstr, struct virtif_sc *vif_sc, uint8_t *enaddr,
 		solo5_exit(SOLO5_EXIT_FAILURE);
 	}
 
+	/* initialize the flag -- some compilers add garbage there */
+	if (viu->viu_dying != 0) {
+		viu->viu_dying = 0;
+	}
 	viu->viu_virtifsc = vif_sc;
 
 	viu->viu_rcvthr = bmk_sched_create("ukvmifp",
