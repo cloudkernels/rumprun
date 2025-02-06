@@ -507,11 +507,13 @@ installsolo5libs ()
 	# rumprun's libc.a define a stack guard.
 	objcopy --redefine-sym __stack_chk_fail=__stack_chk_fail_solo5 \
 		--redefine-sym __stack_chk_guard=__stack_chk_guard_solo5 \
-		solo5/bindings/spt/solo5_spt.o ${SPTLIB}
+		solo5/bindings/solo5_spt.o ${SPTLIB}
+		#solo5/bindings/spt/solo5_spt.o ${SPTLIB}
 
 	objcopy --redefine-sym __stack_chk_fail=__stack_chk_fail_solo5 \
 		--redefine-sym __stack_chk_guard=__stack_chk_guard_solo5 \
-		solo5/bindings/hvt/solo5_hvt.o ${HVTLIB}
+		solo5/bindings/solo5_hvt.o ${HVTLIB}
+		##solo5/bindings/hvt/solo5_hvt.o ${HVTLIB}
 }
 
 wraponetool ()
