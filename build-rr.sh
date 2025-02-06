@@ -583,6 +583,18 @@ dobuild ()
 	PLATFORM_MKCONF=
 	. ${PLATFORMDIR}/platform.conf
 
+	set +e
+	cd src-netbsd
+	patch -N --dry-run -p1 < ../comment.patch
+	if [ $? -eq 0 ]
+	then
+		patch -N -p1 < ../comment.patch
+	else 
+		echo "good"
+	fi
+	cd ../
+	set -e
+
 	buildrump "$@"
 	mkdir -p ${STAGING}/rumprun-${MACHINE_GNU_ARCH}/lib/rumprun-${PLATFORM}\
 	    || die cannot create libdir
