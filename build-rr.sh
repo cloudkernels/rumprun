@@ -585,12 +585,15 @@ dobuild ()
 
 	set +e
 	cd src-netbsd
-	patch -N --dry-run -p1 < ../comment.patch
+	patch -N --dry-run -p1 < ../patches/comment.patch
 	if [ $? -eq 0 ]
 	then
-		patch -N -p1 < ../comment.patch
-	else 
-		echo "good"
+		patch -N -p1 < ../patches/comment.patch
+	fi
+	patch -N --dry-run -p1 < ../patches/softfloat.patch
+	if [ $? -eq 0 ]
+	then
+		patch -N -p1 < ../patches/softfloat.patch
 	fi
 	cd ../
 	set -e
