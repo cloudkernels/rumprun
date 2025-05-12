@@ -1,0 +1,20 @@
+diff --git a/lib/libc/arch/aarch64/softfloat/qp.c b/lib/libc/arch/aarch64/softfloat/qp.c
+index aa5a7fe39..07acc34ec 100644
+--- a/lib/libc/arch/aarch64/softfloat/qp.c
++++ b/lib/libc/arch/aarch64/softfloat/qp.c
+@@ -185,6 +185,7 @@ __trunctfsf2(long double ld_a)
+ 	return c.fltu_f;
+ }
+ 
++#if 0
+ double
+ __trunctfdf2(long double ld_a)
+ {
+@@ -195,6 +196,7 @@ __trunctfdf2(long double ld_a)
+ 
+ 	return c.dblu_d;
+ }
++#endif
+ 
+ int32_t
+ __fixtfsi(long double ld_a)

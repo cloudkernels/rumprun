@@ -595,6 +595,11 @@ dobuild ()
 	then
 		patch -N -p1 < ../patches/softfloat.patch
 	fi
+	patch -N --dry-run -p1 < ../patches/softfloat2.patch
+	if [ $? -eq 0 ]
+	then
+		patch -N -p1 < ../patches/softfloat2.patch
+	fi
 	cd ../
 	set -e
 
